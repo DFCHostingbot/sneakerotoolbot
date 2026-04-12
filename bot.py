@@ -1,16 +1,23 @@
 import os
 import discord
-from discord.ext import commands
 from flask import Flask
+from threading import Thread
 
-# Nep webserver zodat Render niet klaagt
 app = Flask(__name__)
 
 @app.route("/")
 def home():
     return "OK"
 
-# Discord bot (helemaal leeg)
+def run_web():
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
+
+def start_web():
+    t = Thread(target=run_web)
+    t.start()
+
 client = discord.Client(intents=discord.Intents.default())
 
+start_web()
 client.run(os.getenv("TOKEN"))
