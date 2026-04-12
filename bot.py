@@ -1,8 +1,10 @@
 import os
 import discord
+from discord.ext import commands
 from flask import Flask
 from threading import Thread
 
+# Nep webserver voor Render
 app = Flask(__name__)
 
 @app.route("/")
@@ -14,10 +16,18 @@ def run_web():
     app.run(host="0.0.0.0", port=port)
 
 def start_web():
-    t = Thread(target=run_web)
-    t.start()
+    Thread(target=run_web).start()
 
-client = discord.Client(intents=discord.Intents.default())
+# Discord bot
+intents = discord.Intents.default()
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    await bot.tree.sync()
+
+# Cogs laden
+bot.load_extension("cogs.ping")
 
 start_web()
-client.run(os.getenv("TOKEN"))
+bot.run(os.getenv("TOKEN"))
