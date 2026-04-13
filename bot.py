@@ -23,6 +23,7 @@ def tos():
     <p>De bot mag alleen worden gebruikt volgens de regels van Discord en de server waarin hij actief is.</p>
     <p>De bot slaat geen persoonlijke gegevens op.</p>
     <p>Gebruik van de bot is op eigen risico.</p>
+    <p>Ik mag youtuber rol hebben.</p>
     <p>Contact: ItsDaniNL op Discord.</p>
     """
 
