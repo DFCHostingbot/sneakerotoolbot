@@ -47,11 +47,12 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# BELANGRIJK: cogs laden
-@bot.event
+# ✔ JUISTE manier om cogs te laden
 async def setup_hook():
     await bot.load_extension("cogs.ping")
     await bot.tree.sync()
+
+bot.setup_hook = setup_hook
 
 @bot.event
 async def on_ready():
