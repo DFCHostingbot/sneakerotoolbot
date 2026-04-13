@@ -51,6 +51,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 async def setup_hook():
     await bot.load_extension("cogs.ping")
     await bot.load_extension("cogs.moderation")
+     await bot.load_extension("cogs.tickets")
     await bot.tree.sync()
 
 bot.setup_hook = setup_hook
