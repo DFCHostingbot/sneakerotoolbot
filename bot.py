@@ -41,12 +41,21 @@ def run_web():
 def start_web():
     Thread(target=run_web).start()
 
+# Discord bot
 intents = discord.Intents.default()
+intents.message_content = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+# BELANGRIJK: COGS LADEN
+@bot.event
+async def setup_hook():
+    await bot.load_extension("cogs.ping")
+    await bot.tree.sync()
 
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
+    print(f"{bot.user} is online")
 
 start_web()
 bot.run(os.getenv("TOKEN"))
