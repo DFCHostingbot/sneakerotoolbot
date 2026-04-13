@@ -14,7 +14,17 @@ class BrickMode(commands.Cog):
         self.brick_timer_check.start()
 
     # -----------------------------
-    # Zorg dat task pas start als bot klaar is
+    # Timer check (MOET BOVEN before_loop STAAN)
+    # -----------------------------
+    @tasks.loop(seconds=5)
+    async def brick_timer_check(self):
+        if self.bot.bricked and self.brick_until:
+            if datetime.datetime.utcnow() >= self.brick_until:
+                self.bot.bricked = False
+                self.brick_until = None
+
+    # -----------------------------
+    # before_loop MOET NA de task komen
     # -----------------------------
     @brick_timer_check.before_loop
     async def before_brick_timer(self):
@@ -120,16 +130,6 @@ class BrickMode(commands.Cog):
             )
 
         await interaction.response.send_message("🧱 De bot staat in **brick mode** (oneindig).")
-
-    # -----------------------------
-    # Timer check
-    # -----------------------------
-    @tasks.loop(seconds=5)
-    async def brick_timer_check(self):
-        if self.bot.bricked and self.brick_until:
-            if datetime.datetime.utcnow() >= self.brick_until:
-                self.bot.bricked = False
-                self.brick_until = None
 
     # -----------------------------
     # Intercept ALLE commands
