@@ -62,6 +62,7 @@ async def setup_hook():
     await bot.load_extension("cogs.ping")
     await bot.load_extension("cogs.moderation")
     await bot.load_extension("cogs.tickets")
+    await bot.load_extension("cogs.rollen")
     await bot.tree.sync()
 
 bot.setup_hook = setup_hook
