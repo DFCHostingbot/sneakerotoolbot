@@ -50,6 +50,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 # ✔ JUISTE manier om cogs te laden
 async def setup_hook():
     await bot.load_extension("cogs.ping")
+    await bot.load_extension("cogs.moderation")
     await bot.tree.sync()
 
 bot.setup_hook = setup_hook
