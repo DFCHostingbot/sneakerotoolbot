@@ -47,7 +47,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# BELANGRIJK: COGS LADEN
+# BELANGRIJK: cogs laden
 @bot.event
 async def setup_hook():
     await bot.load_extension("cogs.ping")
