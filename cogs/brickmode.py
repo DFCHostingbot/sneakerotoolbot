@@ -10,15 +10,22 @@ class BrickMode(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.bot.bricked = False
-        self.brick_until = None  # Tijd wanneer brickmode eindigt
+        self.brick_until = None
         self.brick_timer_check.start()
+
+    # -----------------------------
+    # Zorg dat task pas start als bot klaar is
+    # -----------------------------
+    @brick_timer_check.before_loop
+    async def before_brick_timer(self):
+        await self.bot.wait_until_ready()
 
     # -----------------------------
     # Helper: log naar staff kanaal
     # -----------------------------
     async def log(self, guild, message):
         if LOG_CHANNEL_ID == 0:
-            return  # Geen logkanaal ingesteld
+            return
         channel = guild.get_channel(LOG_CHANNEL_ID)
         if channel:
             await channel.send(message)
@@ -38,18 +45,17 @@ class BrickMode(commands.Cog):
 
         self.bot.bricked = True
 
-        # Tijd verwerken
         if tijd:
             try:
-                eenheid = tijd[-1]
-                waarde = int(tijd[:-1])
+                unit = tijd[-1]
+                value = int(tijd[:-1])
 
-                if eenheid == "s":
-                    delta = datetime.timedelta(seconds=waarde)
-                elif eenheid == "m":
-                    delta = datetime.timedelta(minutes=waarde)
-                elif eenheid == "h":
-                    delta = datetime.timedelta(hours=waarde)
+                if unit == "s":
+                    delta = datetime.timedelta(seconds=value)
+                elif unit == "m":
+                    delta = datetime.timedelta(minutes=value)
+                elif unit == "h":
+                    delta = datetime.timedelta(hours=value)
                 else:
                     return await interaction.response.send_message(
                         "❌ Ongeldige tijd. Gebruik s, m of h.",
@@ -58,6 +64,7 @@ class BrickMode(commands.Cog):
 
                 self.brick_until = datetime.datetime.utcnow() + delta
                 msg = f"🧱 **Brick mode geactiveerd voor {tijd}.**"
+
             except:
                 return await interaction.response.send_message(
                     "❌ Ongeldige tijd. Voorbeeld: 10m, 30s, 1h",
@@ -65,7 +72,7 @@ class BrickMode(commands.Cog):
                 )
         else:
             self.brick_until = None
-            msg = "🧱 **Brick mode geactiveerd.**"
+            msg = "🧱 **Brick mode geactiveerd (oneindig).**"
 
         await interaction.response.send_message(msg)
         await self.log(interaction.guild, f"🧱 Brick mode geactiveerd door Dani. Tijd: {tijd or 'oneindig'}")
@@ -98,20 +105,18 @@ class BrickMode(commands.Cog):
             return await interaction.response.send_message("🟢 De bot is **NIET** in brick mode.")
 
         if self.brick_until:
-            resterend = self.brick_until - datetime.datetime.utcnow()
-            seconden = int(resterend.total_seconds())
-            minuten = seconden // 60
-            uren = minuten // 60
+            remaining = self.brick_until - datetime.datetime.utcnow()
+            seconds = int(remaining.total_seconds())
 
-            if uren > 0:
-                tijd = f"{uren} uur"
-            elif minuten > 0:
-                tijd = f"{minuten} minuten"
+            if seconds >= 3600:
+                time_str = f"{seconds // 3600} uur"
+            elif seconds >= 60:
+                time_str = f"{seconds // 60} minuten"
             else:
-                tijd = f"{seconden} seconden"
+                time_str = f"{seconds} seconden"
 
             return await interaction.response.send_message(
-                f"🧱 De bot is in **brick mode**.\n⏳ Eindigt over: **{tijd}**"
+                f"🧱 De bot is in **brick mode**.\n⏳ Eindigt over: **{time_str}**"
             )
 
         await interaction.response.send_message("🧱 De bot staat in **brick mode** (oneindig).")
@@ -135,7 +140,6 @@ class BrickMode(commands.Cog):
         if not self.bot.bricked:
             return
 
-        # /unbrick moet ALTIJD werken
         if interaction.type == discord.InteractionType.application_command:
             if interaction.data.get("name") == "unbrick":
                 return
