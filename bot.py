@@ -4,6 +4,9 @@ from discord.ext import commands
 from flask import Flask
 from threading import Thread
 
+# -----------------------------
+# Flask webserver
+# -----------------------------
 app = Flask(__name__)
 
 @app.route("/")
@@ -41,24 +44,32 @@ def run_web():
 def start_web():
     Thread(target=run_web).start()
 
+# -----------------------------
 # Discord bot
-intents = discord.Intents.default()
-intents.message_content = True
-
+# -----------------------------
+intents = discord.Intents.all()
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ✔ JUISTE manier om cogs te laden
+# -----------------------------
+# Cogs laden + slash sync
+# -----------------------------
 async def setup_hook():
     await bot.load_extension("cogs.ping")
     await bot.load_extension("cogs.moderation")
-     await bot.load_extension("cogs.tickets")
+    await bot.load_extension("cogs.tickets")
     await bot.tree.sync()
 
 bot.setup_hook = setup_hook
 
+# -----------------------------
+# Bot online melding
+# -----------------------------
 @bot.event
 async def on_ready():
     print(f"{bot.user} is online")
 
+# -----------------------------
+# Start webserver + bot
+# -----------------------------
 start_web()
 bot.run(os.getenv("TOKEN"))
