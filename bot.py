@@ -19,16 +19,12 @@ def tos():
     <h1>Terms of Service — ItsDaniNL Bot</h1>
     <p>Laatste update: 13 april 2026</p>
     <p>Door deze bot te gebruiken, gaat de gebruiker akkoord met deze voorwaarden.</p>
-    <p>Je mag niet de weergave naam veranderen. Gebeurt dat? Dan gaat de bot op brick mode.</p>
     <p>De bot mag alleen worden gebruikt volgens de regels van Discord en de server waarin hij actief is.</p>
     <p>De bot slaat geen persoonlijke gegevens op.</p>
     <p>Gebruik van de bot is op eigen risico.</p>
     <p>Ik mag youtuber rol hebben.</p>
     <p>Contact: ItsDaniNL op Discord.</p>
-    <p>Om dingen te veranderen moet je een abbonement aansluiten!!!</p>
-    <p>1 uur gratis</p>
-    <p>Eerste maand 50% korting voor 5 cent</p>
-    <p>Daarna 10 cent per maand!</p>
+    <p>Om dingen te veranderen moet je vragen (door een probleem kan ik niet de foto veranderen!</p>
     """
 
 @app.route("/privacy")
