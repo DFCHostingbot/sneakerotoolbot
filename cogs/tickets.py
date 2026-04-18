@@ -3,109 +3,122 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import View, Button
 
+TICKET_CATEGORY_NAME = "🎫 Tickets"
+TICKET_LOG_CHANNEL_ID = 0  # <-- Vul hier je logkanaal ID in
+STAFF_ROLE_NAME = "Staff"  # <-- Alleen deze rol krijgt toegang
+
 # -----------------------------
-# Ticket View (knoppen)
+# VIEW: Ticket openen
 # -----------------------------
 class TicketView(View):
-    def __init__(self, bot, ticket_type):
+    def __init__(self, bot):
         super().__init__(timeout=None)
         self.bot = bot
-        self.ticket_type = ticket_type
 
-    @discord.ui.button(label="Open Ticket", style=discord.ButtonStyle.green)
+    @discord.ui.button(label="Open Ticket", style=discord.ButtonStyle.green, emoji="🎫")
     async def open_ticket(self, interaction: discord.Interaction, button: Button):
+
         guild = interaction.guild
-        user = interaction.user
 
-        # Rollen ophalen
-        staff_role = discord.utils.get(guild.roles, name="Staff")
-        mod_role = discord.utils.get(guild.roles, name="Moderatie team")
+        # Zoek of maak categorie
+        category = discord.utils.get(guild.categories, name=TICKET_CATEGORY_NAME)
+        if category is None:
+            category = await guild.create_category(TICKET_CATEGORY_NAME)
 
-        # Als rollen niet bestaan → foutmelding
-        if staff_role is None or mod_role is None:
+        # Check of gebruiker al een ticket heeft
+        existing = discord.utils.get(guild.channels, name=f"ticket-{interaction.user.id}")
+        if existing:
             return await interaction.response.send_message(
-                "❌ Rollen **Staff** en **Moderatie team** moeten bestaan.",
+                f"❌ Je hebt al een ticket open: {existing.mention}",
                 ephemeral=True
             )
 
-        # Kanaalrechten
+        # Zoek staff rol
+        staff_role = discord.utils.get(guild.roles, name=STAFF_ROLE_NAME)
+
+        # Kanaal perms
         overwrites = {
-            guild.default_role: discord.PermissionOverwrite(view_channel=False),
-            user: discord.PermissionOverwrite(view_channel=True, send_messages=True),
-            staff_role: discord.PermissionOverwrite(view_channel=True, send_messages=True),
-            mod_role: discord.PermissionOverwrite(view_channel=True, send_messages=True),
+            guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            interaction.user: discord.PermissionOverwrite(read_messages=True, send_messages=True),
+            guild.me: discord.PermissionOverwrite(read_messages=True, send_messages=True)
         }
 
-        # Ticketkanaal maken
-        ticket_channel = await guild.create_text_channel(
-            name=f"{self.ticket_type}-{user.name}",
+        # Staff rol toegang geven
+        if staff_role:
+            overwrites[staff_role] = discord.PermissionOverwrite(
+                read_messages=True,
+                send_messages=True
+            )
+
+        # Maak ticket kanaal
+        channel = await guild.create_text_channel(
+            name=f"ticket-{interaction.user.id}",
+            category=category,
             overwrites=overwrites
         )
 
-        # Embed in ticket
-        embed = discord.Embed(
-            title=f"{self.ticket_type.capitalize()} Ticket",
-            description=f"{user.mention}, welkom in je ticket.\nEen teamlid komt zo snel mogelijk bij je.",
-            color=discord.Color.blue()
-        )
-
-        await ticket_channel.send(embed=embed)
-
         await interaction.response.send_message(
-            f"🎫 Ticket geopend: {ticket_channel.mention}",
+            f"🎫 Ticket geopend: {channel.mention}",
             ephemeral=True
         )
 
+        embed = discord.Embed(
+            title="🎫 Ticket geopend",
+            description="Leg hieronder je vraag of probleem uit.\nEen stafflid zal zo snel mogelijk reageren.",
+            color=discord.Color.green()
+        )
+
+        await channel.send(embed=embed, view=CloseTicketView(self.bot))
+
+        # Log
+        if TICKET_LOG_CHANNEL_ID != 0:
+            log = guild.get_channel(TICKET_LOG_CHANNEL_ID)
+            if log:
+                await log.send(f"📥 Ticket geopend door **{interaction.user}** → {channel.mention}")
+
 
 # -----------------------------
-# Tickets Cog
+# VIEW: Ticket sluiten
+# -----------------------------
+class CloseTicketView(View):
+    def __init__(self, bot):
+        super().__init__(timeout=None)
+        self.bot = bot
+
+    @discord.ui.button(label="Sluit Ticket", style=discord.ButtonStyle.red, emoji="🔒")
+    async def close_ticket(self, interaction: discord.Interaction, button: Button):
+
+        channel = interaction.channel
+
+        await interaction.response.send_message("🔒 Ticket wordt gesloten...", ephemeral=True)
+
+        # Log
+        if TICKET_LOG_CHANNEL_ID != 0:
+            log = interaction.guild.get_channel(TICKET_LOG_CHANNEL_ID)
+            if log:
+                await log.send(f"🔒 Ticket gesloten: {channel.name}")
+
+        await channel.delete()
+
+
+# -----------------------------
+# COG
 # -----------------------------
 class Tickets(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="ticket-panels", description="Plaats alle ticket panels")
-    async def ticket_panels(self, interaction: discord.Interaction):
-        await interaction.response.send_message("Panels worden geplaatst...", ephemeral=True)
+    @app_commands.command(name="ticketpanel", description="Plaats het ticket panel")
+    async def ticketpanel(self, interaction: discord.Interaction):
 
-        # -----------------------------
-        # Sollicitatie Panel
-        # -----------------------------
-        embed_s = discord.Embed(
-            title="📄 Sollicitatie Panel",
-            description="Klik op de knop hieronder om een sollicitatie-ticket te openen.",
-            color=discord.Color.green()
-        )
-        await interaction.channel.send(
-            embed=embed_s,
-            view=TicketView(self.bot, "sollicitatie")
-        )
-
-        # -----------------------------
-        # Support Panel
-        # -----------------------------
-        embed_sup = discord.Embed(
-            title="🎧 Support Panel",
-            description="Klik op de knop hieronder om een support-ticket te openen.",
+        embed = discord.Embed(
+            title="🎫 Support Tickets",
+            description="Klik op de knop hieronder om een ticket te openen.",
             color=discord.Color.blue()
         )
-        await interaction.channel.send(
-            embed=embed_sup,
-            view=TicketView(self.bot, "support")
-        )
 
-        # -----------------------------
-        # Staff Panel
-        # -----------------------------
-        embed_st = discord.Embed(
-            title="🛠 Staff Panel",
-            description="Klik op de knop hieronder om een staff-ticket te openen.",
-            color=discord.Color.orange()
-        )
-        await interaction.channel.send(
-            embed=embed_st,
-            view=TicketView(self.bot, "staff")
-        )
+        await interaction.channel.send(embed=embed, view=TicketView(self.bot))
+        await interaction.response.send_message("Ticket panel geplaatst!", ephemeral=True)
 
 
 async def setup(bot):
