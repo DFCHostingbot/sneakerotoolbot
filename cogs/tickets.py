@@ -4,7 +4,7 @@ from discord import app_commands
 from discord.ui import View, Button
 
 TICKET_CATEGORY_NAME = "🎫 Tickets"
-TICKET_LOG_CHANNEL_ID = 0  # <-- Vul hier je logkanaal ID in
+TICKET_LOG_CHANNEL_ID = 1485016184683237406  # <-- Vul hier je logkanaal ID in
 STAFF_ROLE_NAME = "Staff"  # <-- Alleen deze rol krijgt toegang
 
 # -----------------------------
